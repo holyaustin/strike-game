@@ -4,23 +4,22 @@ import './App.css';
 import twitterLogo from './assets/twitter-logo.svg';
 import SelectCharacter from './Components/SelectCharacter';
 import myEpicGame from './utils/MyEpicGame.json';
+import Arena from './Components/Arena';
+import LoadingIndicator from './Components/LoadingIndicator';
 /*
 * Just add transformCharacterData!
 */
 import { CONTRACT_ADDRESS, transformCharacterData } from './constants';
 
 // Constants
-const TWITTER_HANDLE = '_buildspace';
+const TWITTER_HANDLE = 'holyaustin';
 const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
   // State
   const [currentAccount, setCurrentAccount] = useState(null);
-
-  /*
- * Right under current account, setup this new state property
- */
-const [characterNFT, setCharacterNFT] = useState(null);
+  const [characterNFT, setCharacterNFT] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Actions
   const checkIfWalletIsConnected = async () => {
@@ -29,6 +28,10 @@ const [characterNFT, setCharacterNFT] = useState(null);
 
       if (!ethereum) {
         console.log('Make sure you have MetaMask!');
+        /*
+         * We set isLoading here because we use return in the next line
+         */
+        setIsLoading(false); 
         return;
       } else {
         console.log('We have the ethereum object', ethereum);
@@ -46,13 +49,21 @@ const [characterNFT, setCharacterNFT] = useState(null);
     } catch (error) {
       console.log(error);
     }
+        /*
+     * We release the state property after all the function logic
+     */
+        setIsLoading(false);
   };
 
 // Render Methods
 const renderContent = () => {
-  /*
-   * Scenario #1
+   /*
+   * If the app is currently loading, just render out LoadingIndicator
    */
+   if (isLoading) {
+    return <LoadingIndicator />;
+  }
+
   if (!currentAccount) {
     return (
       <div className="connect-wallet-container">
@@ -68,13 +79,15 @@ const renderContent = () => {
         </button>
       </div>
     );
-    /*
-     * Scenario #2
-     */
   } else if (currentAccount && !characterNFT) {
-    return <SelectCharacter setCharacterNFT={setCharacterNFT} />;
+    return <SelectCharacter setCharacterNFT={setCharacterNFT} />;	
+	/*
+	* If there is a connected wallet and characterNFT, it's time to battle!
+	*/
+  } else if (currentAccount && characterNFT) {
+    return <Arena characterNFT={characterNFT} setCharacterNFT={setCharacterNFT} />;
   }
-};
+}; 
 
 
 const checkNetwork = async () => {
@@ -119,11 +132,14 @@ const checkNetwork = async () => {
     
   };
 
-  useEffect(() => {
-    checkIfWalletIsConnected();
-    
-  },   
-  []);
+// UseEffects
+useEffect(() => {
+  /*
+   * Anytime our component mounts, make sure to immiediately set our loading state
+   */
+  setIsLoading(true);
+  checkIfWalletIsConnected();
+}, []);
 
   /*
  * Add this useEffect right under the other useEffect where you are calling checkIfWalletIsConnected
@@ -144,18 +160,18 @@ useEffect(() => {
       signer
     );
 
-    const txn = await gameContract.checkIfUserHasNFT();
-    if (txn.name) {
+    const characterNFT = await gameContract.checkIfUserHasNFT();
+    if (characterNFT.name) {
       console.log('User has character NFT');
-      setCharacterNFT(transformCharacterData(txn));
-    } else {
-      console.log('No character NFT found');
+      setCharacterNFT(transformCharacterData(characterNFT));
     }
+
+    /*
+     * Once we are done with all the fetching, set loading state to false
+     */
+    setIsLoading(false);
   };
 
-  /*
-   * We only want to run this, if we have a connected wallet
-   */
   if (currentAccount) {
     console.log('CurrentAccount:', currentAccount);
     fetchNFTMetadata();
@@ -167,7 +183,7 @@ useEffect(() => {
     <div className="App">
       <div className="container">
         <div className="header-container">
-          <p className="header gradient-text">⚔️ Metaverse Slayer ⚔️</p>
+          <p className="header gradient-text">⚔️ Hero-Battle Metaverse⚔️</p>
           <p className="sub-text">Team up to protect the Metaverse!</p>
           
         {/* This is where our button and image code used to be!
@@ -183,7 +199,7 @@ useEffect(() => {
             href={TWITTER_LINK}
             target="_blank"
             rel="noreferrer"
-          >{`built with @${TWITTER_HANDLE}`}</a>
+          >{`built by @${TWITTER_HANDLE}`}</a>
         </div>
       </div>
     </div>
