@@ -1,4 +1,4 @@
-# Basic Sample Hardhat Project
+# Strike-Game Hardhat / React Project
 
 This project demonstrates a basic Hardhat use case. It comes with a smart contract for NFT game, a test script for that contract, a script that deploys that contract to rinkeby testnet, and an example of a task implementation, which simply lists the available accounts.
 
